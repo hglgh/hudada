@@ -14,7 +14,7 @@ export default () => {
   // 当前题目序号 从1 开始
   const [current, setCurrent] = useState<number>(1)
   //当前题目
-  const [currentQuestion, setCurrentQuestion] = useState<any>(questions[0])
+  const [currentQuestion, setCurrentQuestion] = useState<Question>(questions[0])
   //当前题目答案
   const [currentAnswer, setCurrentAnswer] = useState<string>()
     //回答列表
