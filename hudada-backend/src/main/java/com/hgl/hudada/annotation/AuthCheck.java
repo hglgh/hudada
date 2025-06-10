@@ -7,8 +7,7 @@ import java.lang.annotation.Target;
 
 /**
  * 权限校验
- *
- * 
+ * @author 请别把我整破防
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

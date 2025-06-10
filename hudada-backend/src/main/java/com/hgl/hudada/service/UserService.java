@@ -6,8 +6,9 @@ import com.hgl.hudada.model.dto.user.UserQueryRequest;
 import com.hgl.hudada.model.entity.User;
 import com.hgl.hudada.model.vo.LoginUserVO;
 import com.hgl.hudada.model.vo.UserVO;
-import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * 用户服务
