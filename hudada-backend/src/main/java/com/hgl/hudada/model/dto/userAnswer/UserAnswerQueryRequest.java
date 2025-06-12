@@ -6,7 +6,6 @@ import lombok.EqualsAndHashCode;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.List;
 
 /**
  * 查询用户答案请求
