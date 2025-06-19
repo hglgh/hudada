@@ -21,11 +21,24 @@
         </a-menu-item>
       </a-menu>
     </a-col>
-    <a-col flex="100px">
+    <a-col flex="150px">
       <div v-if="loginUserStore.loginUser.id">
-        {{ loginUserStore.loginUser.userName ?? "无名" }}
+        <a-dropdown style="width: 150px">
+          <a-space>
+            <a-avatar>
+              <img alt="用户头像" :src="loginUserStore.loginUser.userAvatar" />
+            </a-avatar>
+            {{ loginUserStore.loginUser.userName ?? "无名" }}
+          </a-space>
+          <template #content>
+            <a-doption @click="doLoginout">
+              <icon-import />
+              退出登录
+            </a-doption>
+          </template>
+        </a-dropdown>
       </div>
-      <div v-else>
+      <div v-else style="margin-left: 50px">
         <a-button type="primary" href="/user/login">登录</a-button>
       </div>
     </a-col>
@@ -38,6 +51,8 @@ import { useRouter } from "vue-router";
 import { computed, ref } from "vue";
 import { useLoginUserStore } from "@/store/userStore";
 import CheckAccess from "@/access/checkAccess";
+import { userLogoutUsingPost } from "@/api/userController";
+import message from "@arco-design/web-vue/es/message";
 
 const loginUserStore = useLoginUserStore();
 const router = useRouter();
@@ -70,6 +85,22 @@ const doMenuClick = (key: string) => {
   router.push({
     path: key,
   });
+};
+
+const doLoginout = async () => {
+  const response = await userLogoutUsingPost();
+  try {
+    if (response.data.code === 0) {
+      message.success("退出登录成功");
+      loginUserStore.setLoginUser({
+        userName: "未登录",
+      });
+    } else {
+      message.error("退出登录失败" + response.data.message);
+    }
+  } catch (e: any) {
+    message.error("退出登录失败" + e.message);
+  }
 };
 </script>
 

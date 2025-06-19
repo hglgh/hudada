@@ -6,20 +6,31 @@
     layout="inline"
     auto-label-width
     @submit="doSearch"
+    @reset="doReSet"
   >
     <a-form-item field="userName" label="用户名">
-      <a-input v-model="formSearchParams.userName" placeholder="请输入用户名" />
+      <a-input
+        v-model="formSearchParams.userName"
+        placeholder="请输入用户名"
+        allow-clear
+      />
     </a-form-item>
     <a-form-item field="userProfile" label="用户简介">
       <a-input
         v-model="formSearchParams.userProfile"
         placeholder="请输入用户简介"
+        allow-clear
       />
     </a-form-item>
     <a-form-item>
-      <a-button type="primary" html-type="submit" style="width: 100px">
-        搜索
-      </a-button>
+      <a-space>
+        <a-button type="primary" html-type="submit" style="width: 100px">
+          搜索
+        </a-button>
+        <a-button type="secondary" html-type="reset" style="width: 100px">
+          重置
+        </a-button>
+      </a-space>
     </a-form-item>
   </a-form>
   <a-table
@@ -36,8 +47,16 @@
     <template #userAvatar="{ record }">
       <a-image :src="record.userAvatar" width="120" />
     </template>
+    <template #createTime="{ record }">
+      {{ dayjs(record.createTime).format("YYYY-MM-DD HH:mm:ss") }}
+    </template>
+    <template #updateTime="{ record }">
+      {{ dayjs(record.updateTime).format("YYYY-MM-DD HH:mm:ss") }}
+    </template>
     <template #action="{ record }">
-      <a-button status="danger" @click="doDelete(record)">删除</a-button>
+      <a-popconfirm content="确认删除吗?" @ok="doDelete(record)">
+        <a-button status="danger">删除</a-button>
+      </a-popconfirm>
     </template>
   </a-table>
 </template>
@@ -50,6 +69,7 @@ import {
   listUserByPageUsingPost,
 } from "@/api/userController";
 import { Message } from "@arco-design/web-vue";
+import { dayjs } from "@arco-design/web-vue/es/_utils/date";
 
 const columns = [
   {
@@ -80,10 +100,12 @@ const columns = [
   {
     title: "创建时间",
     dataIndex: "createTime",
+    slotName: "createTime",
   },
   {
     title: "更新时间",
     dataIndex: "updateTime",
+    slotName: "updateTime",
   },
   {
     title: "操作",
@@ -153,6 +175,11 @@ const doSearch = () => {
   searchParams.pageSize = 10;
   searchParams.userName = formSearchParams.userName;
   searchParams.userProfile = formSearchParams.userProfile;
+};
+const doReSet = () => {
+  formSearchParams.userName = "";
+  formSearchParams.userProfile = "";
+  doSearch();
 };
 </script>
 

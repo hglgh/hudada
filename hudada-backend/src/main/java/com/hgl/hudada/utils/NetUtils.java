@@ -6,8 +6,9 @@ import javax.servlet.http.HttpServletRequest;
 /**
  * 网络工具类
  *
- * 
+ * @author 请别把我整破防
  */
+@Deprecated
 public class NetUtils {
 
     /**

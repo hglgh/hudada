@@ -34,8 +34,10 @@ import GobalHeader from "@/components/GobalHeader.vue";
 }
 
 .content {
-  margin: 28px;
+  max-width: 1400px;
+  margin: 0 auto 28px;
   padding: 20px;
+  box-sizing: border-box;
   background: linear-gradient(to right, #fefefe, #ffff);
 }
 
