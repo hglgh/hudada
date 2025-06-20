@@ -120,7 +120,7 @@ const router = useRouter();
 /**
  * 提交表单
  */
-const handleSubmit = async ({ values, errors }) => {
+const handleSubmit = async ({ values, errors }: any) => {
   if (errors) {
     console.error("表单错误:", errors);
     Message.error("请检查表单内容");
@@ -141,7 +141,7 @@ const handleSubmit = async ({ values, errors }) => {
     Message.success("操作成功,即将进入应用详情页面");
     setTimeout(() => {
       router.push({
-        path: `/app/detail/${props.id ?? response.data.data}`,
+        path: `/app/detail/${props.id || response.data.data}`,
         replace: true,
       });
     }, 3000);

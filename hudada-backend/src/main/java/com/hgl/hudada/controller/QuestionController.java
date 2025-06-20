@@ -240,4 +240,11 @@ public class QuestionController {
     }
 
     // endregion
+
+    // region AI 生成题目
+    @PostMapping("/ai_generate")
+    public BaseResponse<List<QuestionContentDTO>> aiGenerateQuestion(@RequestBody AiGenerateQuestionRequest aiGenerateQuestionRequest) {
+        return ResultUtils.success(questionService.aiGenerateQuestion(aiGenerateQuestionRequest));
+    }
+    // endregion
 }

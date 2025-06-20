@@ -13,13 +13,19 @@
     >
       <a-form-item field="appId" label="应用Id"> {{ props.appId }}</a-form-item>
       <a-form-item label="题目列表" :content-flex="false" :merge-props="false">
-        <a-button
-          status="success"
-          style="margin-bottom: 16px"
-          @click="addQuestion(formData.questionList.length)"
-        >
-          底部添加题目
-        </a-button>
+        <a-space size="medium">
+          <a-button
+            status="success"
+            style="margin-bottom: 16px"
+            @click="addQuestion(formData.questionList.length)"
+          >
+            底部添加题目
+          </a-button>
+          <AiGenerateQuestionDrawer
+            :appId="appId"
+            :onSuccess="onAiGenerateSuccess"
+          />
+        </a-space>
 
         <a-collapse
           v-for="(question, index) in formData.questionList"
@@ -142,6 +148,7 @@ import { Message } from "@arco-design/web-vue";
 import { useRouter } from "vue-router";
 import { getAppVoByIdUsingGet } from "@/api/appController";
 import { APP_TYPE_ENUM } from "@/constant/app";
+import AiGenerateQuestionDrawer from "@/views/add/components/AiGenerateQuestionDrawer.vue";
 
 interface Props {
   appId: string;
@@ -285,6 +292,11 @@ const handleSubmit = async ({ values, errors }: any) => {
   } else {
     message.error("创建失败，" + response.data.message);
   }
+};
+
+const onAiGenerateSuccess = (result: API.QuestionContentDTO[]) => {
+  formData.value.questionList = [...formData.value.questionList, ...result];
+  message.success(`AI 生成题目成功，已新增 ${result.length} 道题目`);
 };
 </script>
 

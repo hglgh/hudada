@@ -1,12 +1,13 @@
 package com.hgl.hudada.exception;
 
 import com.hgl.hudada.common.ErrorCode;
+import lombok.Getter;
 
 /**
  * 自定义异常类
- *
- * 
+ * @author 请别把我整破防
  */
+@Getter
 public class BusinessException extends RuntimeException {
 
     /**
@@ -29,7 +30,4 @@ public class BusinessException extends RuntimeException {
         this.code = errorCode.getCode();
     }
 
-    public int getCode() {
-        return code;
-    }
 }

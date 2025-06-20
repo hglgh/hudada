@@ -31,9 +31,10 @@
             v-if="currentQuestionNumber === questionList.length"
             circle
             :disabled="!currentAnswer"
+            :loading="loading"
             @click="handleSubmit"
           >
-            查看结果
+            {{ loading ? "分析中" : "查看结果" }}
           </a-button>
           <a-button
             v-if="currentQuestionNumber > 1"
@@ -74,6 +75,7 @@ const props = withDefaults(defineProps<Props>(), {
   appId: () => "",
 });
 
+const loading = ref(false);
 const router = useRouter();
 
 const questionList = ref<API.QuestionContentDTO[]>([]);
@@ -165,6 +167,7 @@ watchEffect(() => {
  * 提交表单
  */
 const handleSubmit = async () => {
+  loading.value = true;
   if (!props.appId || !answerList) {
     message.error("请填写完整");
     return;
@@ -179,6 +182,7 @@ const handleSubmit = async () => {
   } else {
     message.error("提交答案失败，" + res.data.message);
   }
+  loading.value = false;
 };
 </script>
 

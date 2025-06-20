@@ -3,11 +3,14 @@ package com.hgl.hudada.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.hgl.hudada.model.dto.question.AiGenerateQuestionRequest;
+import com.hgl.hudada.model.dto.question.QuestionContentDTO;
 import com.hgl.hudada.model.dto.question.QuestionQueryRequest;
 import com.hgl.hudada.model.entity.Question;
 import com.hgl.hudada.model.vo.QuestionVO;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * 题目服务
@@ -47,4 +50,12 @@ public interface QuestionService extends IService<Question> {
      * @return
      */
     Page<QuestionVO> getQuestionVOPage(Page<Question> questionPage, HttpServletRequest request);
+
+    /**
+     * AI生成题目
+     *
+     * @param aiGenerateQuestionRequest
+     * @return
+     */
+    List<QuestionContentDTO> aiGenerateQuestion(AiGenerateQuestionRequest aiGenerateQuestionRequest);
 }
