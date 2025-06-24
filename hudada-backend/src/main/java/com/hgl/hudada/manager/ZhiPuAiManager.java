@@ -5,10 +5,9 @@ import com.hgl.hudada.common.ErrorCode;
 import com.hgl.hudada.exception.BusinessException;
 import com.zhipu.oapi.ClientV4;
 import com.zhipu.oapi.Constants;
-import com.zhipu.oapi.service.v4.model.ChatCompletionRequest;
-import com.zhipu.oapi.service.v4.model.ChatMessage;
-import com.zhipu.oapi.service.v4.model.ChatMessageRole;
-import com.zhipu.oapi.service.v4.model.ModelApiResponse;
+import com.zhipu.oapi.service.v4.model.*;
+import io.reactivex.Flowable;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -77,12 +76,44 @@ public class ZhiPuAiManager {
      * @return 模型生成的结果
      */
     public String doRequest(String systemPrompt, String userPrompt, Boolean stream, Float temperature) {
-        List<ChatMessage> chatMessages = new ArrayList<>();
-        ChatMessage systemChatMessage = new ChatMessage(ChatMessageRole.SYSTEM.value(), systemPrompt);
-        ChatMessage userChatMessage = new ChatMessage(ChatMessageRole.USER.value(), userPrompt);
-        chatMessages.add(systemChatMessage);
-        chatMessages.add(userChatMessage);
+        List<ChatMessage> chatMessages = buildChatMessages(systemPrompt, userPrompt);
         return doRequest(chatMessages, stream, temperature);
+    }
+
+    /**
+     * 流式请求(简化消息传递)
+     *
+     * @param systemPrompt 系统Prompt
+     * @param userPrompt   用户Prompt
+     * @return 模型生成的结果
+     */
+    public Flowable<ModelData> doStreamRequest(String systemPrompt, String userPrompt, Float temperature) {
+        List<ChatMessage> chatMessages = buildChatMessages(systemPrompt, userPrompt);
+        return doStreamRequest(chatMessages, temperature);
+    }
+
+    /**
+     * 流式请求
+     *
+     * @param messages    要给大模型的Prompt，模型会根据这个Prompt生成结果（包括系统Prompt和用户Prompt）
+     * @param temperature 模型生成的结果随机性
+     * @return 模型生成的结果
+     */
+    public Flowable<ModelData> doStreamRequest(List<ChatMessage> messages, Float temperature) {
+
+        ChatCompletionRequest chatCompletionRequest = ChatCompletionRequest.builder()
+                .model(Constants.ModelChatGLM4)
+                .stream(Boolean.TRUE)
+                .temperature(temperature)
+                .invokeMethod(Constants.invokeMethod)
+                .messages(messages)
+                .build();
+        try {
+            ModelApiResponse invokeModelApiResp = clientV4.invokeModelApi(chatCompletionRequest);
+            return invokeModelApiResp.getFlowable();
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, e.getMessage());
+        }
     }
 
     /**
@@ -109,5 +140,22 @@ public class ZhiPuAiManager {
         } catch (Exception e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, e.getMessage());
         }
+    }
+
+    /**
+     * 构建Prompt
+     *
+     * @param systemPrompt 系统Prompt
+     * @param userPrompt   用户Prompt
+     * @return 模型生成的结果
+     */
+    @NotNull
+    private static List<ChatMessage> buildChatMessages(String systemPrompt, String userPrompt) {
+        List<ChatMessage> chatMessages = new ArrayList<>();
+        ChatMessage systemChatMessage = new ChatMessage(ChatMessageRole.SYSTEM.value(), systemPrompt);
+        ChatMessage userChatMessage = new ChatMessage(ChatMessageRole.USER.value(), userPrompt);
+        chatMessages.add(systemChatMessage);
+        chatMessages.add(userChatMessage);
+        return chatMessages;
     }
 }

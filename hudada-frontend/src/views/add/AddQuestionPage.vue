@@ -24,7 +24,12 @@
           <AiGenerateQuestionDrawer
             :appId="appId"
             :onSuccess="onAiGenerateSuccess"
-          />
+            :onSseSuccess="onAiGenerateSuccessSSE"
+            :on-sse-start="onSseStart"
+            :on-sse-close="onSseClose"
+          >
+            AI生成
+          </AiGenerateQuestionDrawer>
         </a-space>
 
         <a-collapse
@@ -297,6 +302,19 @@ const handleSubmit = async ({ values, errors }: any) => {
 const onAiGenerateSuccess = (result: API.QuestionContentDTO[]) => {
   formData.value.questionList = [...formData.value.questionList, ...result];
   message.success(`AI 生成题目成功，已新增 ${result.length} 道题目`);
+};
+
+const onAiGenerateSuccessSSE = (result: API.QuestionContentDTO) => {
+  formData.value.questionList.push(result);
+  message.success(`AI sse 生成题目成功，已新增 1 道题目`);
+};
+
+const onSseStart = (event: EventSource) => {
+  message.success("AI sse 生成开始");
+};
+
+const onSseClose = (event: EventSource) => {
+  message.success("AI sse 生成结束");
 };
 </script>
 

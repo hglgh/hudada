@@ -8,6 +8,7 @@ import com.hgl.hudada.model.dto.question.QuestionContentDTO;
 import com.hgl.hudada.model.dto.question.QuestionQueryRequest;
 import com.hgl.hudada.model.entity.Question;
 import com.hgl.hudada.model.vo.QuestionVO;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -58,4 +59,12 @@ public interface QuestionService extends IService<Question> {
      * @return
      */
     List<QuestionContentDTO> aiGenerateQuestion(AiGenerateQuestionRequest aiGenerateQuestionRequest);
+
+    /**
+     * AI生成题目SSE模式
+     *
+     * @param aiGenerateQuestionRequest
+     * @return
+     */
+    SseEmitter aiGenerateQuestionSse(AiGenerateQuestionRequest aiGenerateQuestionRequest);
 }

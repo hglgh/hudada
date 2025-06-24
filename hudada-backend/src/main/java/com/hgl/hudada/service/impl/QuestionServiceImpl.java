@@ -1,6 +1,7 @@
 package com.hgl.hudada.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -23,14 +24,20 @@ import com.hgl.hudada.service.AppService;
 import com.hgl.hudada.service.QuestionService;
 import com.hgl.hudada.service.UserService;
 import com.hgl.hudada.utils.SqlUtils;
+import com.zhipu.oapi.service.v4.model.ModelData;
+import io.reactivex.Flowable;
+import io.reactivex.schedulers.Schedulers;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -202,14 +209,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
 
     @Override
     public List<QuestionContentDTO> aiGenerateQuestion(AiGenerateQuestionRequest aiGenerateQuestionRequest) {
-        ThrowUtils.throwIf(aiGenerateQuestionRequest == null, ErrorCode.PARAMS_ERROR);
-        Long appId = aiGenerateQuestionRequest.getAppId();
-        int questionNumber = aiGenerateQuestionRequest.getQuestionNumber();
-        int optionNumber = aiGenerateQuestionRequest.getOptionNumber();
-        App app = appService.getById(appId);
-        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "app不存在");
-        //封装用户Prompt
-        String userPrompt = getGenerateQuestionUserPrompt(app, questionNumber, optionNumber);
+        String userPrompt = verifyAndEncapsulateParams(aiGenerateQuestionRequest);
         String result = zhiPuAiManager.doSyncStableRequest(GENERATE_QUESTION_SYSTEM_PROMPT, userPrompt);
         int start = result.indexOf("[");
         int end = result.lastIndexOf("]");
@@ -221,6 +221,52 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         return questionContentDTOList;
     }
 
+    @Override
+    public SseEmitter aiGenerateQuestionSse(AiGenerateQuestionRequest aiGenerateQuestionRequest) {
+        String userPrompt = verifyAndEncapsulateParams(aiGenerateQuestionRequest);
+        //建立SSE对象, 用于返回数据,0 表示不设置超时时间, 表示一直保持连接 这里我选择默认60秒超时
+        SseEmitter sseEmitter = new SseEmitter(60_000L);
+        Flowable<ModelData> modelDataFlowable = zhiPuAiManager.doStreamRequest(GENERATE_QUESTION_SYSTEM_PROMPT, userPrompt, null);
+        //左括号计数器，除了默认值外，当计数器回归为0后，表示左括号等于右括号数量，则表示一个完整的json对象结束，可以进行解析。
+        AtomicInteger count = new AtomicInteger(0);
+        // 拼接完整题目，存储json对象
+        StringBuilder stringBuilder = new StringBuilder();
+        modelDataFlowable.observeOn(Schedulers.io())
+                .map(modelData -> modelData.getChoices().get(0).getDelta().getContent())
+                .map(content -> content.replaceAll("\\s", ""))
+                .filter(StrUtil::isNotBlank)
+                .flatMap(content -> {
+                    List<Character> characterList = new ArrayList<>();
+                    for (char c : content.toCharArray()) {
+                        characterList.add(c);
+                    }
+                    return Flowable.fromIterable(characterList);
+                })
+                .doOnNext(c -> {
+                    //如果是左括号，则计数器加1
+                    if (c == '{') {
+                        count.addAndGet(1);
+                    }
+                    //如果计数器大于0，则将字符添加到stringBuilder中
+                    if (count.get() > 0) {
+                        stringBuilder.append(c);
+                    }
+                    //如果是右括号，则计数器减1
+                    if (c == '}') {
+                        count.addAndGet(-1);
+                        if (count.get() == 0) {
+                            //拼接并通过SSE发送
+                            sseEmitter.send(JSONUtil.toJsonStr(stringBuilder.toString()));
+                            //重置stringBuilder
+                            stringBuilder.setLength(0);
+                        }
+                    }
+                })
+                .doOnError(e -> log.error("aiGenerateQuestionSse error", e))
+                .doOnComplete(sseEmitter::complete).subscribe();
+        return sseEmitter;
+    }
+
     private String getGenerateQuestionUserPrompt(App app, int questionNumber, int optionNumber) {
         return String.format("""
                 %s，
@@ -229,5 +275,23 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
                 %s，
                 %s
                 """, app.getAppName(), app.getAppDesc(), Objects.requireNonNull(AppTypeEnum.getEnumByValue(app.getAppType())).getText(), questionNumber, optionNumber);
+    }
+
+    /**
+     * 参数校验和封装参数
+     *
+     * @param aiGenerateQuestionRequest
+     * @return
+     */
+    @NotNull
+    private String verifyAndEncapsulateParams(AiGenerateQuestionRequest aiGenerateQuestionRequest) {
+        ThrowUtils.throwIf(aiGenerateQuestionRequest == null, ErrorCode.PARAMS_ERROR);
+        Long appId = aiGenerateQuestionRequest.getAppId();
+        int questionNumber = aiGenerateQuestionRequest.getQuestionNumber();
+        int optionNumber = aiGenerateQuestionRequest.getOptionNumber();
+        App app = appService.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR, "app不存在");
+        //封装用户Prompt
+        return getGenerateQuestionUserPrompt(app, questionNumber, optionNumber);
     }
 }

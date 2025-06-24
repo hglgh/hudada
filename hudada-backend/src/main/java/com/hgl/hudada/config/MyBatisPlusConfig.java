@@ -9,8 +9,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * MyBatis Plus 配置
- *
- * @author https://github.com/liyupi
+ * @author 请别把我整破防
  */
 @Configuration
 @MapperScan("com.hgl.hudada.mapper")
