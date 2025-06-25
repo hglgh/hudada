@@ -15,6 +15,11 @@ import java.util.List;
 public class UserAnswerAddRequest implements Serializable {
 
     /**
+     * id,来实现幂等性，避免重复提交
+     */
+    private Long id;
+
+    /**
      * 应用 id
      */
     private Long appId;

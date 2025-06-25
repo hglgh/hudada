@@ -23,14 +23,46 @@ spring:
     url: jdbc:mysql://localhost:3306/hudada?serverTimezone=Asia/Shanghai
     username: root
     password: 123456
+  shardingsphere:
+    #数据源配置
+    datasource:
+      names: hudada
+      hudada:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        jdbc-url: jdbc:mysql://localhost:3306/hudada?serverTimezone=Asia/Shanghai
+        username: root
+        password: 123456
+    # 分片规则设置
+    rules:
+      sharding:
+        # 分片算法
+        sharding-algorithms:
+          #自定义分片规则名称
+          hudada-answer-table-inline-sharding-algorithm:
+            # inline 类型是简单的配置文件里面就能写的配置，还有其他自定义类型的配置方式
+            type: INLINE
+            # 分片规则
+            props:
+              algorithm-expression: user_answer_$->{appId % 2}
+        #分片表
+        tables:
+          user_answer:
+            actual-data-nodes: hudada.user_answer_$->{0..1}
+            # 分片策略
+            table-strategy:
+              standard:
+                sharding-algorithm-name: hudada-answer-table-inline-sharding-algorithm
+                sharding-column: appId
+    props:
+      # 开启 SQL 显示
+      sql-show: true
   # Redis 配置
-  # todo 需替换配置，然后取消注释
-  #  redis:
-  #    database: 1
-  #    host: localhost
-  #    port: 6379
-  #    timeout: 5000
-  #    password: 123456
+  redis:
+    database: 1
+    host: localhost
+    port: 6379
+    timeout: 5000
   # 文件上传
   servlet:
     multipart:

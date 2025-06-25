@@ -54,6 +54,7 @@
 import {
   computed,
   defineProps,
+  onMounted,
   reactive,
   ref,
   watchEffect,
@@ -65,7 +66,10 @@ import message from "@arco-design/web-vue/es/message";
 import { Message } from "@arco-design/web-vue";
 import { useRouter } from "vue-router";
 import { getAppVoByIdUsingGet } from "@/api/appController";
-import { addUserAnswerUsingPost } from "@/api/userAnswerController";
+import {
+  addUserAnswerUsingPost,
+  generateUserAnswerIdUsingGet,
+} from "@/api/userAnswerController";
 
 interface Props {
   appId: string;
@@ -81,6 +85,9 @@ const router = useRouter();
 const questionList = ref<API.QuestionContentDTO[]>([]);
 
 const app = ref<API.AppVO>();
+
+// 当前用户答题的唯一id，用于实现幂等性，避免重复提交
+const id = ref<number>();
 
 //当前题目序号（从 1 开始）
 const currentQuestionNumber = ref<number>(1);
@@ -109,6 +116,25 @@ const onRadioChange = (value: string) => {
   // 记录回答
   answerList[currentQuestionNumber.value - 1] = value;
 };
+
+/**
+ * 生成用户答案id
+ */
+const generateId = async () => {
+  const res = await generateUserAnswerIdUsingGet();
+  if (res.data.code === 0 && res.data.data) {
+    id.value = res.data.data;
+  } else {
+    message.error("获取唯一 id 失败，" + res.data.message);
+  }
+};
+
+/**
+ * 页面加载时触发
+ */
+onMounted(() => {
+  generateId();
+});
 
 /**
  * 加载数据
@@ -173,6 +199,7 @@ const handleSubmit = async () => {
     return;
   }
   const res = await addUserAnswerUsingPost({
+    id: id.value,
     appId: props.appId as any,
     choices: answerList,
   });
